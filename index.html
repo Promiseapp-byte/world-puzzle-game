@@ -1,1 +1,343 @@
-# world-puzzle-game
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Puzzle Game – Primary 3–6 (With Music & SFX)</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#222;
+    --bg1:#ffe29f; --bg2:#ffa99f; --bg3:#ff719a;
+    --btn-green:#28a745; --btn-blue:#007bff; --btn-orange:#ff9800; --btn-pink:#e91e63; --btn-red:#ef4444;
+    --panel: rgba(255,255,255,.9);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:'Baloo 2', system-ui, -apple-system, Arial, sans-serif; color:var(--ink);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    background: radial-gradient(circle at 10% 10%, var(--bg1), transparent 40%),
+                radial-gradient(circle at 90% 20%, var(--bg2), transparent 45%),
+                radial-gradient(circle at 50% 100%, var(--bg3), transparent 55%),
+                linear-gradient(135deg, #fff7ea, #ffd9e5);
+  }
+  header{ width:100%; text-align:center; padding:18px 12px; font-size:28px; font-weight:700; text-shadow:1px 1px 0 #fff; }
+  .bar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; padding:6px 10px; }
+  select, input[type="text"], button{
+    font-family:'Baloo 2', inherit; font-size:18px; border:none; border-radius:14px; padding:12px 16px;
+    outline:none; transition:.15s transform ease, .15s opacity ease, .15s box-shadow ease;
+  }
+  input[type="text"]{ width:min(88vw,480px); background:#fff; border:2px solid #eee; }
+  button{ color:#fff; box-shadow:0 3px 0 rgba(0,0,0,.15); }
+  button:active{ transform:translateY(1px); box-shadow:0 1px 0 rgba(0,0,0,.15); }
+  .btn-green{background:var(--btn-green)}
+  .btn-blue{background:var(--btn-blue)}
+  .btn-orange{background:var(--btn-orange)}
+  .btn-pink{background:var(--btn-pink)}
+  .btn-red{background:var(--btn-red)}
+  #game{ width:100%; text-align:center; padding:0 14px 24px; }
+  #scrambled{ font-size:36px; font-weight:800; letter-spacing:.12em; margin:12px 0; color:#0b6cff; text-shadow:1px 1px 0 #fff; }
+  #timer{ font-size:20px; font-weight:700; color:#b91c1c; margin-top:6px; }
+  #result{ min-height:28px; font-size:20px; margin-top:6px; }
+  .chips{ display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:6px; }
+  .chip{ background:var(--panel); padding:6px 12px; border-radius:999px; font-size:16px; border:2px solid #fff; box-shadow:0 2px 0 rgba(0,0,0,.08); }
+  #teacher-panel{
+    display:none; width:min(920px,96vw); margin:12px auto 24px; background:var(--panel);
+    border:2px solid #fff; border-radius:16px; padding:12px;
+  }
+  textarea{ width:100%; min-height:140px; border:2px solid #eee; border-radius:12px; padding:10px; font-size:16px; }
+  .muted{ color:#555; font-size:14px; }
+  .toggles{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:8px 0 0; }
+  .toggle{ background:#111; color:#fff; border-radius:999px; padding:8px 14px; cursor:pointer; user-select:none; }
+  .off{ opacity:.55 }
+  @media (min-width:720px){
+    #scrambled{ font-size:44px }
+  }
+</style>
+</head>
+<body>
+
+<header>🧩 Word Puzzle – Primary 3 to 6</header>
+
+<div class="bar">
+  <label for="level" style="font-weight:600">Level:</label>
+  <select id="level" aria-label="Choose level">
+    <option value="P3">Primary 3</option>
+    <option value="P4">Primary 4</option>
+    <option value="P5">Primary 5</option>
+    <option value="P6">Primary 6</option>
+  </select>
+  <button class="btn-green" id="start-btn">Start</button>
+  <button class="btn-pink" id="again-btn">Play Again</button>
+  <button class="btn-orange" id="teacher-btn">Teacher Mode</button>
+</div>
+
+<div class="toggles">
+  <div class="toggle" id="music-toggle">🎵 Music: <b id="music-state">Off</b></div>
+  <div class="toggle" id="sfx-toggle">🔊 SFX: <b id="sfx-state">On</b></div>
+</div>
+
+<div id="game">
+  <div id="scrambled">Press Start!</div>
+  <input id="guess" type="text" placeholder="Type your guess…" autocomplete="off" />
+  <div class="bar">
+    <button class="btn-blue" id="submit-btn">Submit</button>
+    <button class="btn-red" id="skip-btn">Skip</button>
+  </div>
+
+  <div class="chips">
+    <div class="chip" id="score">Score: 0</div>
+    <div class="chip" id="round">Puzzle: – / 10</div>
+    <div class="chip" id="timer">Time Left: 15s</div>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<!-- Teacher Panel -->
+<div id="teacher-panel">
+  <h3 style="margin:8px 0 6px;">📚 Teacher Mode</h3>
+  <p class="muted" id="tlab">Editing list for <b>Primary 3</b>. You can paste words separated by commas or new lines.</p>
+  <textarea id="word-list" placeholder="cat, dog, book
+or
+cat
+dog
+book"></textarea>
+  <div class="bar" style="justify-content:space-between;">
+    <div class="muted" id="wcount">0 words</div>
+    <div>
+      <button class="btn-orange" id="save-words">Save Words</button>
+      <input id="import-file" type="file" accept=".txt" style="display:none">
+      <button class="btn-blue" id="import-btn">Import .txt</button>
+      <button class="btn-green" id="export-btn">Export .txt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Online audio (SFX + music). Music starts after first button press when you toggle it ON. -->
+<audio id="sfx-correct" preload="auto" src="https://www.soundjay.com/buttons/sounds/button-4.mp3"></audio>
+<audio id="sfx-wrong"   preload="auto" src="https://www.soundjay.com/buttons/sounds/button-10.mp3"></audio>
+<audio id="sfx-timeout" preload="auto" src="https://www.soundjay.com/button/sounds/beep-07.mp3"></audio>
+
+<!-- Light, kid-friendly loop (online). If it ever fails to load, the game still works. -->
+<audio id="bg-music" preload="auto" loop
+  src="https://cdn.pixabay.com/audio/2022/03/15/audio_e15e00b6b5.mp3"></audio>
+
+<script>
+  // ---------- Default word banks ----------
+  const DEFAULT_WORDS = {
+    P3: ["apple","book","cat","dog","fish","house","tree","ball","chair","milk","table","bird","rice","bread","water","spoon","plate","class","phone","pencil"],
+    P4: ["market","school","family","animal","garden","flower","yellow","purple","people","father","mother","sister","window","letter","simple","planet","doctor","nurse","bottle","eraser"],
+    P5: ["library","teacher","subject","country","station","balance","picture","battery","project","culture","healthy","promise","harvest","problem","journey","musical","holiday","decimal","fraction","purpose"],
+    P6: ["support","sentence","paragraph","solution","computer","keyboard","internet","reliable","triangle","weather","division","compound","mountain","language","character","electric","remember","discuss","improve","exercise"]
+  };
+
+  // ---------- State ----------
+  let level = "P3";
+  let words = loadWords(level);
+  let currentWord = "";
+  let round = 0, totalRounds = 10, score = 0;
+  let timerId = null, timeLeft = 15;
+
+  let musicOn = false, sfxOn = true;
+
+  // ---------- Elements ----------
+  const levelSel = document.getElementById("level");
+  const startBtn = document.getElementById("start-btn");
+  const againBtn = document.getElementById("again-btn");
+  const teacherBtn = document.getElementById("teacher-btn");
+  const submitBtn = document.getElementById("submit-btn");
+  const skipBtn = document.getElementById("skip-btn");
+
+  const musicToggle = document.getElementById("music-toggle");
+  const sfxToggle = document.getElementById("sfx-toggle");
+  const musicState = document.getElementById("music-state");
+  const sfxState = document.getElementById("sfx-state");
+
+  const scrambledEl = document.getElementById("scrambled");
+  const guessEl = document.getElementById("guess");
+  const scoreEl = document.getElementById("score");
+  const roundEl = document.getElementById("round");
+  const timerEl = document.getElementById("timer");
+  const resultEl = document.getElementById("result");
+
+  const teacherPanel = document.getElementById("teacher-panel");
+  const tLabel = document.getElementById("tlab");
+  const wordTA = document.getElementById("word-list");
+  const wcount = document.getElementById("wcount");
+  const saveWordsBtn = document.getElementById("save-words");
+  const importBtn = document.getElementById("import-btn");
+  const exportBtn = document.getElementById("export-btn");
+  const importFile = document.getElementById("import-file");
+
+  const sfxCorrect = document.getElementById("sfx-correct");
+  const sfxWrong   = document.getElementById("sfx-wrong");
+  const sfxTimeout = document.getElementById("sfx-timeout");
+  const bgMusic    = document.getElementById("bg-music");
+
+  // ---------- Storage helpers ----------
+  function storageKeyWords(lvl){ return `wp_words_${lvl}`; }
+  function loadWords(lvl){
+    const raw = localStorage.getItem(storageKeyWords(lvl));
+    return raw ? JSON.parse(raw) : [...DEFAULT_WORDS[lvl]];
+  }
+  function saveWordsList(lvl, list){
+    localStorage.setItem(storageKeyWords(lvl), JSON.stringify(list));
+  }
+
+  // ---------- Utils ----------
+  function label(lvl){ return ({P3:"Primary 3",P4:"Primary 4",P5:"Primary 5",P6:"Primary 6"})[lvl]; }
+  function shuffle(word){
+    const a = word.split("");
+    for(let i=a.length-1; i>0; i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+    return a.join("");
+  }
+  function parseWords(text){
+    const parts = text.split(/[,\n]/).map(w=>w.trim().toLowerCase()).filter(Boolean);
+    const seen = new Set(), out=[];
+    for(const w of parts){ if(!seen.has(w)){ seen.add(w); out.push(w); } }
+    return out;
+  }
+  function updateCount(){ wcount.textContent = `${parseWords(wordTA.value).length} words`; }
+
+  // ---------- Game flow ----------
+  function newRound(){
+    if(round >= totalRounds){ endGame(); return; }
+    roundEl.textContent = `Puzzle: ${round+1} / ${totalRounds}`;
+    currentWord = words[Math.floor(Math.random()*words.length)];
+    let scr = shuffle(currentWord), tries=0;
+    while(scr===currentWord && tries<5){ scr = shuffle(currentWord); tries++; }
+    scrambledEl.textContent = scr;
+    resultEl.textContent = "";
+    guessEl.value = "";
+    guessEl.focus();
+    startTimer();
+  }
+
+  function startTimer(){
+    clearInterval(timerId);
+    timeLeft = 15;
+    timerEl.textContent = `Time Left: ${timeLeft}s`;
+    timerId = setInterval(()=>{
+      timeLeft--;
+      timerEl.textContent = `Time Left: ${timeLeft}s`;
+      if(timeLeft<=0){
+        clearInterval(timerId);
+        if(sfxOn) sfxTimeout.play().catch(()=>{});
+        resultEl.textContent = `⏰ Time's up! It was "${currentWord}".`;
+        round++; setTimeout(newRound, 900);
+      }
+    },1000);
+  }
+
+  function startGame(){
+    score = 0; round = 0;
+    scoreEl.textContent = `Score: ${score}`;
+    if(musicOn){
+      bgMusic.volume = 0.25;
+      bgMusic.play().catch(()=>{}); // may need first tap; toggling Music ON counts as interaction
+    } else {
+      bgMusic.pause(); bgMusic.currentTime = 0;
+    }
+    newRound();
+  }
+
+  function endGame(){
+    clearInterval(timerId);
+    scrambledEl.textContent = "🏁 Game Over!";
+    resultEl.textContent = `Your score: ${score}`;
+  }
+
+  function check(){
+    const guess = guessEl.value.trim().toLowerCase();
+    if(!guess) return;
+    if(guess === currentWord){
+      resultEl.textContent = "✅ Correct!";
+      score++; scoreEl.textContent = `Score: ${score}`;
+      clearInterval(timerId);
+      if(sfxOn) sfxCorrect.play().catch(()=>{});
+      round++; setTimeout(newRound, 800);
+    } else {
+      resultEl.textContent = "❌ Try again!";
+      if(sfxOn) sfxWrong.play().catch(()=>{});
+    }
+  }
+
+  // ---------- Events ----------
+  levelSel.addEventListener("change", e=>{
+    level = e.target.value;
+    words = loadWords(level);
+    tLabel.innerHTML = `Editing list for <b>${label(level)}</b>.`;
+    wordTA.value = words.join(", ");
+    updateCount();
+  });
+
+  startBtn.addEventListener("click", startGame);
+  againBtn.addEventListener("click", startGame);
+  submitBtn.addEventListener("click", check);
+  skipBtn.addEventListener("click", ()=>{ clearInterval(timerId); round++; newRound(); });
+  guessEl.addEventListener("keydown", e=>{ if(e.key==="Enter") check(); });
+
+  teacherBtn.addEventListener("click", ()=>{
+    const open = teacherPanel.style.display==="block";
+    teacherPanel.style.display = open ? "none" : "block";
+    wordTA.value = words.join(", ");
+    updateCount();
+  });
+
+  saveWordsBtn.addEventListener("click", ()=>{
+    const list = parseWords(wordTA.value);
+    if(list.length===0){ alert("Please add at least one word."); return; }
+    words = list; saveWordsList(level, list);
+    alert(`✅ Saved ${list.length} words for ${label(level)}.`);
+  });
+
+  wordTA.addEventListener("input", updateCount);
+  importBtn.addEventListener("click", ()=>importFile.click());
+  importFile.addEventListener("change", async (e)=>{
+    const f = e.target.files?.[0]; if(!f) return;
+    try {
+      const text = await f.text();
+      const list = parseWords(text);
+      if(list.length===0){ alert("The file seems empty."); return; }
+      wordTA.value = list.join(", ");
+      updateCount();
+      words = list; saveWordsList(level, list);
+      alert(`✅ Imported ${list.length} words for ${label(level)}.`);
+    } catch(err){ alert("Could not read file."); }
+    finally { importFile.value = ""; }
+  });
+  exportBtn.addEventListener("click", ()=>{
+    const list = parseWords(wordTA.value); if(!list.length){ alert("Nothing to export."); return; }
+    const blob = new Blob([list.join("\n")], {type:"text/plain"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href=url; a.download=`WordList_${label(level).replace(" ","")}.txt`; a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Music/SFX toggles (mobile-friendly)
+  musicToggle.addEventListener("click", ()=>{
+    musicOn = !musicOn;
+    musicState.textContent = musicOn ? "On" : "Off";
+    musicToggle.classList.toggle("off", !musicOn);
+    if(musicOn){
+      bgMusic.volume = 0.25;
+      bgMusic.play().catch(()=>{}); // requires user gesture; this click counts
+    } else {
+      bgMusic.pause(); bgMusic.currentTime = 0;
+    }
+  });
+  sfxToggle.addEventListener("click", ()=>{
+    sfxOn = !sfxOn;
+    sfxState.textContent = sfxOn ? "On" : "Off";
+    sfxToggle.classList.toggle("off", !sfxOn);
+  });
+
+  // Initial UI
+  wordTA.value = words.join(", ");
+  updateCount();
+  musicToggle.classList.add("off"); // default music off
+</script>
+</body>
+</html>
